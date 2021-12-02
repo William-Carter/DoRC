@@ -1,41 +1,65 @@
+from logging import exception
+from re import sub
 import praw
 import time
+import prawcore
 import requests
 import argparse
 import os
 import json
+dirPath = os.path.dirname(os.path.realpath(__file__))
 
 def main():
-    dirPath = os.path.dirname(os.path.realpath(__file__))
     argParser = argparse.ArgumentParser()
     argParser.add_argument("-x", required=True, help="Your credentials file. See the readme for help on formatting it correctly.")
     argParser.add_argument("-s", required=True, help="The subreddit your collection belongs to.")
     argParser.add_argument("-c", required=True, help="The ID of your collection. This is the end part of the URL (Without the slashes).")
     argParser.add_argument("-d", help="The directory to download files to. Will be downloaded in the same folder as the script by default.")
     args = argParser.parse_args()
+
+    if not os.path.isfile(args.x):
+        raise Exception("Credential file does not exist!")
+
     
+
+    if not os.path.isdir(args.d):
+        raise Exception("Invalid Directory")
+
+
     with open(args.x, "r") as credentialsFile:
         credentials = json.load(credentialsFile)
 
+    if not (("password" in credentials) and ("username" in credentials) and ("client_id" in credentials) and ("client_secret" in credentials)):
+        raise Exception("Credential file is incomplete!")
 
+    downloadCollection(credentials["client_id"], credentials["client_secret"], credentials["username"], credentials["password"], args.s, args.c, args.d)
+    
+
+def downloadCollection(clientID, clientSecret, username, password, subreddit, collectionID, dlDirectory=""):
     reddit = praw.Reddit(
-    client_id=credentials["client_id"],
-    client_secret=credentials["client_secret"],
-    password=credentials["password"],
+    client_id=clientID,
+    client_secret=clientSecret,
+    password=password,
     user_agent="Collection Downloader",
-    username=credentials["username"]
+    username=username
     )
 
+    try:
+        print("Logged in as", reddit.user.me())
+    except prawcore.exceptions.OAuthException:
+        raise Exception("Invalid Login!")
 
-    print("Logged in as", reddit.user.me())
+    collection = reddit.subreddit(subreddit).collections(collectionID)
+    try:
+        collection.title
+    except:
+        raise Exception("Collection and/or subreddit is incorrect")
 
 
-    collection = reddit.subreddit(args.s).collections(args.c)
-
-    if not args.d:
-        directory = dirPath+"/"+args.s+"_"+collection.title+"/"
+    if not dlDirectory:
+        directory = dirPath+"/"+subreddit+"_"+collection.title+"/"
     else:
-        directory = args.d+"/"+args.s+"_"+collection.title+"/"
+        directory = dlDirectory+"/"+subreddit+"_"+collection.title+"/"
     
     if not os.path.isdir(directory):
         os.makedirs(directory)
@@ -56,7 +80,7 @@ def main():
         
         # Prevent the 60 request per minute limit from being exceededs
         limiter = max(1-(time.time()-timeAtStartOfRequest), 0)
-        print("Waiting for", limiter, "seconds\n\n")
+        print("Waiting for", round(limiter, 2), "seconds\n\n")
         time.sleep(limiter)
 
     print("Collection Finished Downloading")
