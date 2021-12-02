@@ -1,16 +1,22 @@
-# Requirements:
-- praw
-- requests
+# Downloader of Reddit Collections
+
+<br/>
+
+
+## Requirements:
+- Python 3.10
+- PRAW module
+- Requests module
 
 <br />
 <br/>
 
-# Credentials
+## Credentials
 Go to https://www.reddit.com/prefs/apps and create a new app for use with this program. 
 
 You're making a **script**, so select that option.
 
-You'll need to set the Redirect URI to something even though it's pointless for scripts, http://localhost:8080 is a good option.
+You'll need to set the Redirect URI to something even though it's pointless for scripts, http://localhost:8080 is a good choice.
 
 Once you've done that, you'll have both the client ID
 
@@ -39,7 +45,7 @@ Once your credentials.json file is complete, you can pass it into the program.
 <br />
 <br/>
 
-# Usage
+## Usage
 The program has four arguments:
 
     -x     Your credential file
